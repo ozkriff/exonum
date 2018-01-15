@@ -28,10 +28,10 @@ impl NodeHandler {
     /// Validates consensus message, then redirects it to the corresponding `handle_...` function.
     #[cfg_attr(feature = "flame_profile", flame)]
     pub fn handle_consensus(&mut self, msg: ConsensusMessage) {
-        if !self.is_enabled {
+        /*if !self.is_enabled {
             println!("handle_consensus: IGNORING {:?}", msg); // TODO: remove
             return;
-        }
+        }*/
 
         // Ignore messages from previous and future height
         if msg.height() < self.state.height() || msg.height() > self.state.height().next() {

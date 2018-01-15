@@ -303,6 +303,7 @@ pub fn add_one_height(sandbox: &TimestampingSandbox, sandbox_state: &SandboxStat
     add_one_height_with_transactions(sandbox, sandbox_state, &[tx.raw().clone()]);
 }
 
+
 pub fn add_one_height_with_transactions<'a, I>(
     sandbox: &TimestampingSandbox,
     sandbox_state: &SandboxState,
@@ -341,6 +342,7 @@ where
 
     trace!("=========================add_one_height_with_timeout started=========================");
     let initial_height = sandbox.current_height();
+    println!("add_one_height_with_transactions_ozkriff: initial_height: {}", initial_height);
     // assert 1st round
     sandbox.assert_state(initial_height, ROUND_ONE);
 
@@ -358,9 +360,12 @@ where
     let mut propose: Option<Propose>;
 
     let n_validators = sandbox.n_validators();
-    for _ in 0..n_validators {
+    println!("add_one_height_with_transactions_ozkriff: <");
+    for n in 0..n_validators {
         propose = add_round_with_transactions(sandbox, sandbox_state, hashes.as_ref());
         let round = sandbox.current_round();
+        println!("add_one_height_with_transactions_ozkriff: n = {}, is_leader = {}, round = {}",
+            n, sandbox.is_leader(), round);
         if sandbox.is_leader() {
             // ok, we are leader
             trace!("ok, we are leader, round: {:?}", round);
@@ -434,9 +439,11 @@ where
             }
             sandbox.check_broadcast_status(new_height, &block.hash());
 
+            println!("add_one_height_with_transactions_ozkriff: RETURN");
             return Ok(hashes);
         }
     }
+    println!("add_one_height_with_transactions_ozkriff: >");
 
     Err("because at one of loops we should become a leader and return")
 }
