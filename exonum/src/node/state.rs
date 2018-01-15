@@ -439,7 +439,12 @@ impl State {
     pub fn is_leader(&self) -> bool {
         self.validator_state()
             .as_ref()
-            .map(|validator| self.leader(self.round()) == validator.id)
+            .map(|validator| {
+                let leader = self.leader(self.round());
+                println!("is_leader: self.leader={} self.round()={} validator.id={}",
+                    leader, self.round(), validator.id);
+                leader == validator.id
+            })
             .unwrap_or(false)
     }
 
