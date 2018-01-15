@@ -60,6 +60,8 @@ pub enum ExternalMessage {
     PeerAdd(SocketAddr),
     /// Transaction that implements the `Transaction` trait.
     Transaction(Box<Transaction>),
+    /// TODO on/off docs
+    Enable(bool),
 }
 
 /// Node timeout types.
@@ -107,6 +109,8 @@ pub struct NodeHandler {
     /// Known peer addresses.
     // TODO: move this into peer exchange service
     pub peer_discovery: Vec<SocketAddr>,
+    /// Does this node participates in the consensus?
+    is_enabled: bool,
 }
 
 /// Service configuration.
@@ -319,6 +323,7 @@ impl NodeHandler {
             state,
             channel: sender,
             peer_discovery: config.peer_discovery,
+            is_enabled: true,
         }
     }
 
@@ -533,9 +538,12 @@ impl ApiSender {
     /// Add peer to peer list
     pub fn peer_add(&self, addr: SocketAddr) -> io::Result<()> {
         let msg = ExternalMessage::PeerAdd(addr);
-        self.0.clone().send(msg).wait().map(drop).map_err(
-            into_other,
-        )
+        self.send_external_message(msg)
+    }
+
+    /// Send an external message
+    pub fn send_external_message(&self, message: ExternalMessage) -> io::Result<()> {
+        self.0.clone().send(message).wait().map(drop).map_err(into_other)
     }
 }
 
@@ -546,9 +554,7 @@ impl TransactionSend for ApiSender {
             return Err(io::Error::new(io::ErrorKind::Other, msg));
         }
         let msg = ExternalMessage::Transaction(tx);
-        self.0.clone().send(msg).wait().map(drop).map_err(
-            into_other,
-        )
+        self.send_external_message(msg)
     }
 }
 

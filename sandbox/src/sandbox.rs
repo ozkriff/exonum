@@ -164,6 +164,10 @@ impl Sandbox {
         self.check_unexpected_message()
     }
 
+    pub fn process_events(&self) {
+        self.inner.borrow_mut().process_events();
+    }
+
     pub fn set_validators_map(
         &mut self,
         new_addresses_len: u8,

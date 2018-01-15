@@ -179,6 +179,90 @@ fn test_reach_thirteen_height() {
 }
 
 #[test]
+fn test_ozkriff() {
+    {
+        let sandbox = timestamping_sandbox();
+        let sandbox_state = SandboxState::new();
+        sandbox.assert_state(HEIGHT_ONE, ROUND_ONE);
+        add_one_height(&sandbox, &sandbox_state);
+        sandbox.assert_state(HEIGHT_TWO, ROUND_ONE);
+        add_one_height(&sandbox, &sandbox_state);
+        sandbox.assert_state(HEIGHT_THREE, ROUND_ONE);
+    }
+
+    /*
+    {
+        let sandbox = timestamping_sandbox();
+        let sandbox_state = SandboxState::new();
+        let message = exonum::node::ExternalMessage::Enable(false);
+        sandbox.node_handler_mut().channel.api_requests.send(message).unwrap();
+        sandbox.process_events();
+        add_one_height(&sandbox, &sandbox_state);
+        sandbox.assert_state(HEIGHT_ONE, ROUND_ONE);
+    }
+    */
+
+    {
+        let sandbox = timestamping_sandbox();
+        let sandbox_state = SandboxState::new();
+
+        sandbox.assert_state(HEIGHT_ONE, ROUND_ONE);
+        let result = add_one_height_ozkriff(&sandbox, &sandbox_state);
+        assert!(result.is_ok());
+        sandbox.assert_state(HEIGHT_TWO, ROUND_ONE);
+
+        let message = exonum::node::ExternalMessage::Enable(false);
+        sandbox.node_handler_mut().channel.api_requests.send(message).unwrap();
+        sandbox.process_events();
+
+        sandbox.assert_state(HEIGHT_TWO, ROUND_ONE);
+        let result = add_one_height_ozkriff(&sandbox, &sandbox_state);
+        assert!(result.is_err());
+        sandbox.assert_state(HEIGHT_TWO, ROUND_ONE);
+
+        let message = exonum::node::ExternalMessage::Enable(true);
+        sandbox.node_handler_mut().channel.api_requests.send(message).unwrap();
+        sandbox.process_events();
+
+        sandbox.assert_state(HEIGHT_TWO, ROUND_ONE);
+        let result = add_one_height_ozkriff(&sandbox, &sandbox_state);
+        assert!(result.is_ok()); // <- fails here. why?
+        sandbox.assert_state(HEIGHT_THREE, ROUND_ONE);
+
+    }
+
+    /*
+    {
+        let sandbox = timestamping_sandbox();
+        let sandbox_state = SandboxState::new();
+
+        let tx = gen_timestamping_tx();
+        // sandbox.recv(&tx);
+
+        sandbox.assert_state(HEIGHT_ONE, ROUND_ONE);
+        add_round_with_transactions(&sandbox, &sandbox_state, &[tx.hash()]);
+        sandbox.assert_state(HEIGHT_ONE, ROUND_TWO);
+
+        let message = exonum::node::ExternalMessage::Enable(false);
+        sandbox.node_handler_mut().channel.api_requests.send(message).unwrap();
+        sandbox.process_events();
+
+        sandbox.assert_state(HEIGHT_ONE, ROUND_TWO);
+        add_round_with_transactions(&sandbox, &sandbox_state, &[tx.hash()]);
+        sandbox.assert_state(HEIGHT_ONE, ROUND_TWO);
+
+        let message = exonum::node::ExternalMessage::Enable(true);
+        sandbox.node_handler_mut().channel.api_requests.send(message).unwrap();
+        sandbox.process_events();
+
+        sandbox.assert_state(HEIGHT_ONE, ROUND_TWO);
+        add_round_with_transactions(&sandbox, &sandbox_state, &[tx.hash()]);
+        sandbox.assert_state(HEIGHT_ONE, ROUND_THREE);
+    }
+    */
+}
+
+#[test]
 fn test_query_state_hash() {
     let sandbox = timestamping_sandbox();
     let sandbox_state = SandboxState::new();

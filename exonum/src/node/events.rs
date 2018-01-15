@@ -18,6 +18,7 @@ use events::error::LogError;
 
 impl EventHandler for NodeHandler {
     fn handle_event(&mut self, event: Event) {
+        println!("handle_event: {:?}", event);
         match event {
             Event::Network(network) => self.handle_network_event(network),
             Event::Api(api) => self.handle_api_event(api),
@@ -31,6 +32,10 @@ impl NodeHandler {
     // this is because of internal `Copy` types in `JumpToRound`.
     #![cfg_attr(feature="cargo-clippy", allow(needless_pass_by_value))]
     fn handle_internal_event(&mut self, event: InternalEvent) {
+        if !self.is_enabled {
+            println!("IGNORING");
+            return;
+        }
         match event {
             InternalEvent::Timeout(timeout) => self.handle_timeout(timeout),
             InternalEvent::JumpToRound(height, round) => self.handle_new_round(height, round),
@@ -54,6 +59,10 @@ impl NodeHandler {
             ExternalMessage::PeerAdd(address) => {
                 info!("Send Connect message to {}", address);
                 self.connect(&address);
+            }
+            ExternalMessage::Enable(value) => {
+                println!("is_enabled = {}", value);
+                self.is_enabled = value;
             }
         }
     }

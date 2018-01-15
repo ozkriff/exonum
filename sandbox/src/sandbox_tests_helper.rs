@@ -311,6 +311,27 @@ pub fn add_one_height_with_transactions<'a, I>(
 where
     I: IntoIterator<Item = &'a RawTransaction>,
 {
+    add_one_height_with_transactions_ozkriff(sandbox, sandbox_state, txs).unwrap()
+}
+
+pub fn add_one_height_ozkriff(sandbox: &TimestampingSandbox, sandbox_state: &SandboxState) -> Result<(), &'static str>{
+    // gen some tx
+    let tx = gen_timestamping_tx();
+    let result = add_one_height_with_transactions_ozkriff(sandbox, sandbox_state, &[tx.raw().clone()]);
+    match result {
+        Ok(_) => Ok(()),
+        Err(msg) => Err(msg),
+    }
+}
+
+pub fn add_one_height_with_transactions_ozkriff<'a, I>(
+    sandbox: &TimestampingSandbox,
+    sandbox_state: &SandboxState,
+    txs: I,
+) -> Result<Vec<Hash>, &'static str>
+where
+    I: IntoIterator<Item = &'a RawTransaction>,
+{
     // sort transaction in order accordingly their hashes
     let txs = sandbox.filter_present_transactions(txs);
     let mut tx_pool = BTreeMap::new();
@@ -413,12 +434,13 @@ where
             }
             sandbox.check_broadcast_status(new_height, &block.hash());
 
-            return hashes;
+            return Ok(hashes);
         }
     }
 
-    unreachable!("because at one of loops we should become a leader and return");
+    Err("because at one of loops we should become a leader and return")
 }
+
 
 pub fn add_one_height_with_transactions_from_other_validator(
     sandbox: &TimestampingSandbox,
