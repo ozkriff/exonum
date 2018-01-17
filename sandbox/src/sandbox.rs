@@ -91,6 +91,7 @@ impl SandboxInner {
     fn process_network_requests(&mut self) {
         let network_getter = futures::lazy(|| -> Result<(), ()> {
             while let Async::Ready(Some(network)) = self.network_requests_rx.poll()? {
+                println!("SandboxInner::process_network_requests: SEND {:?}", network);
                 match network {
                     NetworkRequest::SendMessage(peer, msg) => self.sent.push_back((peer, msg)),
                     NetworkRequest::DisconnectWithPeer(_) |
@@ -292,12 +293,25 @@ impl Sandbox {
         }
     }
 
+
     pub fn broadcast<T: Message>(&self, msg: &T) {
         self.broadcast_to_addrs(msg, self.addresses.iter().skip(1));
     }
 
+    pub fn broadcast_ozkriff<T: Message>(&self, msg: &T) -> Result<(), String> {
+        self.broadcast_to_addrs_ozkriff(msg, self.addresses.iter().skip(1))
+    }
+
     // TODO: add self-test for broadcasting?
     pub fn broadcast_to_addrs<'a, T: Message, I>(&self, msg: &T, addresses: I)
+    where
+        I: IntoIterator<Item = &'a SocketAddr>,
+    {
+        self.broadcast_to_addrs_ozkriff(msg, addresses).unwrap();
+    }
+
+    // TODO: add self-test for broadcasting?
+    pub fn broadcast_to_addrs_ozkriff<'a, T: Message, I>(&self, msg: &T, addresses: I) -> Result<(), String>
     where
         I: IntoIterator<Item = &'a SocketAddr>,
     {
@@ -312,12 +326,12 @@ impl Sandbox {
             if let Some((real_addr, real_msg)) = sended {
                 let any_real_msg = Any::from_raw(real_msg.clone()).expect("Send incorrect message");
                 if any_real_msg != any_expected_msg {
-                    panic!(
+                    return Err(format!(
                         "Expected to broadcast the message {:?} instead sending {:?} to {}",
                         any_expected_msg,
                         any_real_msg,
                         real_addr
-                    )
+                    ))
                 }
                 if !expected_set.contains(&real_addr) {
                     panic!(
@@ -337,6 +351,7 @@ impl Sandbox {
                 );
             }
         }
+        Ok(())
     }
 
     pub fn check_broadcast_status(&self, height: Height, block_hash: &Hash) {

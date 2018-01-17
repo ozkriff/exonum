@@ -257,6 +257,14 @@ pub fn add_round_with_transactions(
     sandbox_state: &SandboxState,
     transactions: &[Hash],
 ) -> Option<Propose> {
+    add_round_with_transactions_ozkriff(sandbox, sandbox_state, transactions).unwrap()
+}
+
+pub fn add_round_with_transactions_ozkriff(
+    sandbox: &TimestampingSandbox,
+    sandbox_state: &SandboxState,
+    transactions: &[Hash],
+) -> Result<Option<Propose>, String> {
     let mut res = None;
     let round_timeout = sandbox.round_timeout(); //use local var to save long code call
 
@@ -287,9 +295,9 @@ pub fn add_round_with_transactions(
 
 
     if sandbox.is_leader() {
-        res = check_and_broadcast_propose_and_prevote(sandbox, sandbox_state, transactions);
+        res = check_and_broadcast_propose_and_prevote_ozkriff(sandbox, sandbox_state, transactions)?;
     }
-    res
+    Ok(res)
 }
 
 pub fn gen_timestamping_tx() -> TimestampTx {
@@ -315,7 +323,7 @@ where
     add_one_height_with_transactions_ozkriff(sandbox, sandbox_state, txs).unwrap()
 }
 
-pub fn add_one_height_ozkriff(sandbox: &TimestampingSandbox, sandbox_state: &SandboxState) -> Result<(), &'static str>{
+pub fn add_one_height_ozkriff(sandbox: &TimestampingSandbox, sandbox_state: &SandboxState) -> Result<(), String>{
     // gen some tx
     let tx = gen_timestamping_tx();
     let result = add_one_height_with_transactions_ozkriff(sandbox, sandbox_state, &[tx.raw().clone()]);
@@ -329,7 +337,7 @@ pub fn add_one_height_with_transactions_ozkriff<'a, I>(
     sandbox: &TimestampingSandbox,
     sandbox_state: &SandboxState,
     txs: I,
-) -> Result<Vec<Hash>, &'static str>
+) -> Result<Vec<Hash>, String>
 where
     I: IntoIterator<Item = &'a RawTransaction>,
 {
@@ -362,7 +370,7 @@ where
     let n_validators = sandbox.n_validators();
     println!("add_one_height_with_transactions_ozkriff: <");
     for n in 0..n_validators {
-        propose = add_round_with_transactions(sandbox, sandbox_state, hashes.as_ref());
+        propose = add_round_with_transactions_ozkriff(sandbox, sandbox_state, hashes.as_ref())?;
         let round = sandbox.current_round();
         println!("add_one_height_with_transactions_ozkriff: n = {}, is_leader = {}, round = {}",
             n, sandbox.is_leader(), round);
@@ -445,7 +453,7 @@ where
     }
     println!("add_one_height_with_transactions_ozkriff: >");
 
-    Err("because at one of loops we should become a leader and return")
+    Err("because at one of loops we should become a leader and return".into())
 }
 
 
@@ -574,8 +582,16 @@ fn check_and_broadcast_propose_and_prevote(
     sandbox_state: &SandboxState,
     transactions: &[Hash],
 ) -> Option<Propose> {
+    check_and_broadcast_propose_and_prevote_ozkriff(sandbox, sandbox_state, transactions).unwrap()
+}
+
+fn check_and_broadcast_propose_and_prevote_ozkriff(
+    sandbox: &TimestampingSandbox,
+    sandbox_state: &SandboxState,
+    transactions: &[Hash],
+) -> Result<Option<Propose>, String> {
     if *sandbox_state.time_millis_since_round_start.borrow() > sandbox.propose_timeout() {
-        return None;
+        return Ok(None);
     }
 
     let time_millis_since_round_start_copy = {
@@ -603,7 +619,7 @@ fn check_and_broadcast_propose_and_prevote(
     trace!("broadcasting propose with hash: {:?}", propose.hash());
     trace!("broadcasting propose with round: {:?}", propose.round());
     trace!("sandbox.current_round: {:?}", sandbox.current_round());
-    sandbox.broadcast(&propose);
+    sandbox.broadcast_ozkriff(&propose)?;
 
     sandbox.broadcast(&Prevote::new(
         VALIDATOR_0,
@@ -613,7 +629,7 @@ fn check_and_broadcast_propose_and_prevote(
         LOCK_ZERO,
         sandbox.s(VALIDATOR_0),
     ));
-    Some(propose.clone())
+    Ok(Some(propose.clone()))
 }
 
 /// Idea of method is sandbox to receive correct propose from certain validator
