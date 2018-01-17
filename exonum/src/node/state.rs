@@ -68,7 +68,9 @@ pub struct State {
     height_start_time: SystemTime,
     height: Height,
 
-    round: Round,
+    /// super docs
+    pub round: Round, // TODO: make private again
+
     locked_round: Round,
     locked_propose: Option<Hash>,
     last_hash: Hash,

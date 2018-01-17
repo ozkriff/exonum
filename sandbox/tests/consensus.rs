@@ -215,17 +215,62 @@ fn test_ozkriff() {
         sandbox.node_handler_mut().channel.api_requests.send(message).unwrap();
         sandbox.process_events();
 
+
         sandbox.assert_state(HEIGHT_TWO, ROUND_ONE);
         let result = add_one_height_ozkriff(&sandbox, &sandbox_state);
         assert!(result.is_err());
-        sandbox.assert_state(HEIGHT_TWO, ROUND_ONE);
+        // sandbox.assert_state(HEIGHT_TWO, ROUND_ONE);
 
         let message = exonum::node::ExternalMessage::Enable(true);
         sandbox.node_handler_mut().channel.api_requests.send(message).unwrap();
         sandbox.process_events();
 
         sandbox.assert_state(HEIGHT_TWO, ROUND_ONE);
+
+
+        println!("---------------------------------------- 1");
+        sandbox.skip_send();
+        println!("---------------------------------------- 2");
+        sandbox.skip_send();
+        println!("---------------------------------------- 3");
+        sandbox.skip_send();
+        println!("---------------------------------------- 4");
+        sandbox.skip_send();
+        println!("---------------------------------------- 5");
+        sandbox.skip_send();
+        println!("---------------------------------------- 6 (!)");
+
+        println!("---------------------------------------- 7");
+        // sandbox.add_time(Duration::from_millis(sandbox.round_timeout() - 1));
+        println!("---------------------------------------- 8");
+        // sandbox.add_time(Duration::from_millis(sandbox.round_timeout() - 1));
+        println!("---------------------------------------- 9");
+        // sandbox.skip_send();
+        println!("---------------------------------------- 10");
+        // sandbox.skip_send();
+        println!("---------------------------------------- 11");
+
+        // sandbox.add_time(Duration::from_millis(sandbox.round_timeout()));
+        // sandbox.add_time(Duration::from_millis(sandbox.propose_timeout() + 1));
+        // sandbox.skip_send();
+
+
+        // sandbox.send(
+        //     sandbox.a(VALIDATOR_3),
+        //     &Propose::new(
+        //         VALIDATOR_0,
+        //         HEIGHT_TWO,
+        //         ROUND_TWO,
+        //         &sandbox.last_hash(),
+        //         &[],
+        //         sandbox.s(VALIDATOR_0),
+        //     ),
+        // );
+        // sandbox.check_unexpected_message();
+
         let result = add_one_height_ozkriff(&sandbox, &sandbox_state);
+        println!("---------------------------------------- got result");
+        println!("RESULT={:?}", result);
         assert!(result.is_ok()); // <- fails here. why?
         sandbox.assert_state(HEIGHT_THREE, ROUND_ONE);
 

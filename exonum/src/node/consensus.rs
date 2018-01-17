@@ -636,14 +636,19 @@ impl NodeHandler {
     /// Handles round timeout. As result node sends `Propose` if it is a leader or `Prevote` if it
     /// is locked to some round.
     pub fn handle_round_timeout(&mut self, height: Height, round: Round) {
+        println!("handle_round_timeout: <");
         // TODO debug asserts (ECR-171)?
         if height != self.state.height() {
+            println!("handle_round_timeout: `height != self.state.height()` RETURN >");
             return;
         }
         if round != self.state.round() {
+            println!("handle_round_timeout: `round != self.state.round()` RETURN >");
             return;
         }
         warn!("ROUND TIMEOUT height={}, round={}", height, round);
+
+        // TODO: MORE LOGS
 
         // Update state to new round
         self.state.new_round();
@@ -652,6 +657,7 @@ impl NodeHandler {
         self.add_round_timeout();
 
         self.process_new_round();
+        println!("handle_round_timeout: >");
     }
 
     /// Handles propose timeout. Node sends `Propose` and `Prevote` if it is a leader as result.

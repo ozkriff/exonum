@@ -270,6 +270,11 @@ impl Sandbox {
         self.inner.borrow_mut().handle_event(event);
     }
 
+    pub fn skip_send(&self) {
+        let msg = self.inner.borrow_mut().sent.pop_front().unwrap();
+        println!("skip_send: {:?}", msg);
+    }
+
     pub fn send<T: Message>(&self, addr: SocketAddr, msg: &T) {
         let any_expected_msg = Any::from_raw(msg.raw().clone()).unwrap();
         let sended = self.inner.borrow_mut().sent.pop_front();

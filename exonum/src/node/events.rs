@@ -14,10 +14,12 @@
 
 use events::{Event, EventHandler, NetworkEvent, InternalEvent, InternalRequest};
 use super::{NodeHandler, ExternalMessage, NodeTimeout};
+use helpers::Round;
 use events::error::LogError;
 
 impl EventHandler for NodeHandler {
     fn handle_event(&mut self, event: Event) {
+        // panic!("NOOO");
         println!("handle_event: {:?}", event);
         match event {
             Event::Network(network) => self.handle_network_event(network),
@@ -32,10 +34,12 @@ impl NodeHandler {
     // this is because of internal `Copy` types in `JumpToRound`.
     #![cfg_attr(feature="cargo-clippy", allow(needless_pass_by_value))]
     fn handle_internal_event(&mut self, event: InternalEvent) {
+        /*
         if !self.is_enabled {
             println!("IGNORING");
             return;
         }
+        */
         match event {
             InternalEvent::Timeout(timeout) => self.handle_timeout(timeout),
             InternalEvent::JumpToRound(height, round) => self.handle_new_round(height, round),
@@ -43,6 +47,10 @@ impl NodeHandler {
     }
 
     fn handle_network_event(&mut self, event: NetworkEvent) {
+        if !self.is_enabled {
+            println!("handle_network_event: IGNORING");
+            return;
+        }
         match event {
             NetworkEvent::PeerConnected(peer, connect) => self.handle_connected(peer, connect),
             NetworkEvent::PeerDisconnected(peer) => self.handle_disconnected(peer),
@@ -54,15 +62,24 @@ impl NodeHandler {
     fn handle_api_event(&mut self, event: ExternalMessage) {
         match event {
             ExternalMessage::Transaction(tx) => {
+                if !self.is_enabled {
+                    println!("handle_api_event: Transaction: IGNORING");
+                    return;
+                }
                 self.handle_incoming_tx(tx);
             }
             ExternalMessage::PeerAdd(address) => {
+                if !self.is_enabled {
+                    println!("handle_api_event: PeerAdd: IGNORING");
+                    return;
+                }
                 info!("Send Connect message to {}", address);
                 self.connect(&address);
             }
             ExternalMessage::Enable(value) => {
                 println!("is_enabled = {}", value);
                 self.is_enabled = value;
+                self.state.round = Round(1);
             }
         }
     }

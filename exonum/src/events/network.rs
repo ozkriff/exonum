@@ -255,7 +255,7 @@ impl RequestHandler {
             .for_each(move |request| {
                 match request {
                     NetworkRequest::SendMessage(peer, msg) => {
-
+                        println!("OZKRIFF: SEND peer={:?}, msg={:?}", peer, msg);
                         let conn_tx = outgoing_connections
                             .get(peer)
                             .map(|conn_tx| conn_fut(Ok(conn_tx).into_future()))
