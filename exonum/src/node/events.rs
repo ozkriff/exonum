@@ -80,6 +80,7 @@ impl NodeHandler {
                 println!("is_enabled = {}", value);
                 self.is_enabled = value;
                 self.state.round = Round(1);
+                self.add_round_timeout();
             }
         }
     }

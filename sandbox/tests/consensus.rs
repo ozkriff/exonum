@@ -225,6 +225,7 @@ fn test_ozkriff() {
         sandbox.node_handler_mut().channel.api_requests.send(message).unwrap();
         sandbox.process_events();
 
+
         sandbox.assert_state(HEIGHT_TWO, ROUND_ONE);
 
 
@@ -241,8 +242,14 @@ fn test_ozkriff() {
         println!("---------------------------------------- 6 (!)");
 
         println!("---------------------------------------- 7");
+        sandbox.add_time(Duration::from_millis(sandbox.round_timeout() - 1));
         // sandbox.add_time(Duration::from_millis(sandbox.round_timeout() - 1));
+        // sandbox.add_time(Duration::from_millis(sandbox.round_timeout() - 1));
+        // sandbox.add_time(Duration::from_millis(sandbox.round_timeout() - 1));
+        // sandbox.add_time(Duration::from_millis(sandbox.round_timeout() - 1));
+        // sandbox.process_events();
         println!("---------------------------------------- 8");
+        // sandbox.add_time(Duration::from_millis(sandbox.round_timeout() - 1));
         // sandbox.add_time(Duration::from_millis(sandbox.round_timeout() - 1));
         println!("---------------------------------------- 9");
         // sandbox.skip_send();
@@ -253,7 +260,6 @@ fn test_ozkriff() {
         // sandbox.add_time(Duration::from_millis(sandbox.round_timeout()));
         // sandbox.add_time(Duration::from_millis(sandbox.propose_timeout() + 1));
         // sandbox.skip_send();
-
 
         // sandbox.send(
         //     sandbox.a(VALIDATOR_3),

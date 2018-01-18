@@ -271,8 +271,9 @@ impl Sandbox {
     }
 
     pub fn skip_send(&self) {
-        let msg = self.inner.borrow_mut().sent.pop_front().unwrap();
-        println!("skip_send: {:?}", msg);
+        let (addr, msg) = self.inner.borrow_mut().sent.pop_front().unwrap();
+        let any_msg = Any::from_raw(msg.clone()).unwrap();
+        println!("skip_send: {:?} to {}", any_msg, addr);
     }
 
     pub fn send<T: Message>(&self, addr: SocketAddr, msg: &T) {
