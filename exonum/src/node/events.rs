@@ -79,7 +79,8 @@ impl NodeHandler {
             ExternalMessage::Enable(value) => {
                 println!("is_enabled = {}", value);
                 self.is_enabled = value;
-                self.state.round = Round(1);
+                // self.state.round = ;
+                self.state.jump_round(Round(1));
                 self.add_round_timeout();
             }
         }
