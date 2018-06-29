@@ -288,7 +288,7 @@ impl StorageValue for Round {
     }
 
     fn from_bytes(value: Cow<[u8]>) -> Self {
-        Round(u32::from_bytes(value))
+        Round(<u32 as StorageValue>::from_bytes(value))
     }
 }
 
