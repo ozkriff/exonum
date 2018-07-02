@@ -29,7 +29,7 @@ use chrono::{DateTime, Local};
 
 use std::env;
 use std::io::{self, Write};
-use std::time::SystemTime;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use blockchain::{GenesisConfig, ValidatorKeys};
 use node::NodeConfig;
@@ -109,7 +109,11 @@ fn format_time(time: SystemTime) -> String {
 }
 
 fn format_log_record(buf: &mut Formatter, record: &Record) -> io::Result<()> {
-    let time = format_time(SystemTime::now());
+    // let time = format_time(SystemTime::now());
+
+    let ts = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+    let secs = ts.as_secs().to_string();
+    let millis = (u64::from(ts.subsec_nanos()) / 1_000_000).to_string();
 
     let verbose_src_path = match env::var("RUST_VERBOSE_PATH") {
         Ok(val) => val.parse::<bool>().unwrap_or(false),
@@ -135,10 +139,14 @@ fn format_log_record(buf: &mut Formatter, record: &Record) -> io::Result<()> {
         };
         writeln!(
             buf,
-            "{} {} {} {}",
-            time.dimmed(),
+            "[{} : {:03}] - [ {} ] - {} - {}",
+            secs.bold(),
+            millis.bold(),
+            // "{} {} {} {}",
+            // time.dimmed(),
             level,
-            source_path.dimmed(),
+            &source_path,
+            // source_path.dimmed(),
             record.args()
         )
     } else {
@@ -149,6 +157,15 @@ fn format_log_record(buf: &mut Formatter, record: &Record) -> io::Result<()> {
             Level::Debug => "DEBUG",
             Level::Trace => "TRACE",
         };
-        writeln!(buf, "{} {} {} {}", time, level, &source_path, record.args())
+        writeln!(
+            buf,
+            "[{} : {:03}] - [ {} ] - {} - {}",
+            secs,
+            millis,
+            level,
+            &source_path,
+            record.args()
+        )
+        // writeln!(buf, "{} {} {} {}", time, level, &source_path, record.args())
     }
 }
