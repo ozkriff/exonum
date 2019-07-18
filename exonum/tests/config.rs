@@ -63,6 +63,11 @@ impl ConfigSpec {
         Self::new(root_dir, 4)
     }
 
+    fn new_bad_internal_events_capacity() -> Self {
+        let root_dir = PathBuf::from(Self::CONFIG_TESTDATA_FOLDER).join("bad_internal_events_capacity");
+        Self::new(root_dir, 1)
+    }
+
     fn new_with_pass() -> Self {
         let root_dir = PathBuf::from(Self::CONFIG_TESTDATA_FOLDER).join("with_pass");
         Self::new(root_dir, 1)
@@ -408,6 +413,33 @@ fn test_more_validators_count() {
         .with_args(env.expected_pub_configs())
         .run()
         .unwrap();
+}
+
+#[test]
+#[should_panic(expected = "invalid value: integer `-128`, expected usize")]
+fn test_bad_internal_events_capacity() {
+    let env = ConfigSpec::new_bad_internal_events_capacity();
+    let index = 0;
+
+    env.copy_node_config_to_output(index);
+    let node_config = env.output_node_config(index);
+    env.command("finalize")
+        .with_arg(env.output_sec_config(index))
+        .with_arg(&node_config)
+        .with_arg("--public-configs")
+        .with_args(env.expected_pub_configs())
+        .run()
+        .unwrap();
+    assert_node_config_files_eq(&node_config, env.expected_node_config_file(i));
+
+    let feedback = env
+        .command("run")
+        .with_named_arg("-c", &node_config)
+        .with_named_arg("-d", env.output_dir().join("foo"))
+        .with_named_arg("--service-key-pass", "pass:")
+        .with_named_arg("--consensus-key-pass", "pass:")
+        .run();
+    assert!(feedback.is_none());
 }
 
 #[test]
