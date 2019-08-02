@@ -19,11 +19,20 @@ pub use exonum::api::ApiAccess;
 use actix_web::{test::TestServer, App};
 use reqwest::{Client, RequestBuilder as ReqwestBuilder, Response, StatusCode};
 use serde::{de::DeserializeOwned, Serialize};
+use serde_json::json;
 
 use std::fmt::{self, Display};
 
 use exonum::{
-    api::{self, node::SharedNodeState, ApiAggregator, ServiceApiState},
+    api::{
+        self,
+        node::{
+            public::{explorer::TransactionQuery, system::DispatcherInfo},
+            SharedNodeState,
+        },
+        ApiAggregator, ServiceApiState,
+    },
+    crypto::Hash,
     messages::{AnyTx, Verified},
     node::ApiSender,
 };
@@ -58,7 +67,7 @@ impl fmt::Display for ApiKind {
 /// API encapsulation for the testkit. Allows to execute and synchronously retrieve results
 /// for REST-ful endpoints of services.
 pub struct TestKitApi {
-    test_server: TestServer,
+    test_server: TestServer, // TODO: un-RefCell this field
     test_client: Client,
     api_sender: ApiSender,
 }
@@ -84,10 +93,12 @@ impl TestKitApi {
     pub(crate) fn from_raw_parts(aggregator: ApiAggregator, api_sender: ApiSender) -> Self {
         trace!("Created testkit api: {:#?}", aggregator);
 
+        let test_server = create_test_server(aggregator.clone());
         TestKitApi {
-            test_server: create_test_server(aggregator),
+            test_server,
             test_client: Client::new(),
             api_sender,
+            // aggregator,
         }
     }
 
@@ -101,8 +112,16 @@ impl TestKitApi {
             .expect("Cannot broadcast transaction");
     }
 
+    // TODO: Can I make this mutable?
     /// Creates a requests builder for the public API scope.
     pub fn public(&self, kind: impl Display) -> RequestBuilder {
+        // TODO: ???
+        // Но вообще мне кажется, что лучше просто в методах public, private
+        // перед отправкой запроса посмотреть, нет ли в канале RestartApi запроса,
+        // и если есть, то просто пересоздать поле TestServer.
+
+        // self.update_api();
+
         RequestBuilder::new(
             self.test_server.url(""),
             &self.test_client,
@@ -120,7 +139,39 @@ impl TestKitApi {
             kind.to_string(),
         )
     }
+
+    pub fn system_public_api(&self) -> SystemPublicApi {
+        SystemPublicApi::new(self)
+    }
+
+    // TODO: (ozkriff) implement
+    pub fn system_private_api(self) {
+        // SystemPrivateApi::new(self) // TODO
+        unimplemented!("TODO")
+    }
 }
+
+// TODO (ozkriff): Is it really a good idea? Just using supervisor's endpoints looks easier.
+// impl supervisor::PrivateApi for TestKitApi {
+//     // type Error = (); // TODO: What error type should I use here?
+//
+//     fn deploy_artifact(&self, artifact: DeployRequest) -> Result<Hash, Self::Error> {
+//         // TODO: What keys should I use here? I don't have an access to TestKit's data here.
+//         // let signed = artifact.sign(
+//         //     self.instance_id,
+//         //     *self.state.public_key(),
+//         //     self.state.secret_key(),
+//         // );
+//         // let hash = signed.object_hash();
+//         // self.send(signed);
+//         // Ok(hash)
+//         unimplemented!()
+//     }
+//
+//     fn start_service(&self, service: StartService) -> Result<Hash, Self::Error> {
+//         unimplemented!()
+//     }
+// }
 
 type ReqwestModifier<'b> = Box<dyn FnOnce(ReqwestBuilder) -> ReqwestBuilder + 'b>;
 
@@ -322,4 +373,75 @@ fn create_test_server(aggregator: ApiAggregator) -> TestServer {
     info!("Test server created on {}", server.addr());
 
     server
+}
+
+// TODO: SystemPublicApi & SystemPrivateApi
+//
+// идея делать отдельные структуры для клиентов апи она хороша тем,
+// что соотносится с тем, как реальные клиенты работают с нашим апи.
+//
+// в этом ПРе стоит сделать?
+//
+// why not, там немного ведь допилить надо для SystemPublicApi и SystemPrivateApi,
+// они там в паре тестов юзаются
+
+// TODO (@ozkriff): Add `SystemPrivateApi`
+// "v1/peers"
+// "v1/network"
+// "v1/consensus_enabled"
+// "v1/consensus_enabled"
+// "v1/shutdown"
+// "v1/rebroadcast"
+
+/// Wrapper for the public system API allowing to easily use it (compared to raw `TestKitApi` calls).
+pub struct SystemPublicApi<'a> {
+    pub inner: &'a TestKitApi,
+}
+
+impl<'a> SystemPublicApi<'a> {
+    pub fn new(api: &'a TestKitApi) -> Self {
+        Self { inner: api }
+    }
+
+    // TODO: This function doesn't really belongs to _system_ API,
+    // it should be later moved to something like `ExplorerPublicApi`.
+    //
+    /// Asserts that the transaction with the given hash has a specified status.
+    pub fn assert_tx_status(&self, tx_hash: Hash, expected_status: &serde_json::Value) {
+        let info: serde_json::Value = self
+            .inner
+            .public(ApiKind::Explorer)
+            .query(&TransactionQuery::new(tx_hash))
+            .get("v1/transactions")
+            .unwrap();
+        if let serde_json::Value::Object(mut info) = info {
+            let tx_status = info.remove("status").unwrap();
+            assert_eq!(tx_status, *expected_status);
+        } else {
+            panic!("Invalid transaction info format, object expected");
+        }
+    }
+
+    pub fn assert_tx_success(&self, tx_hash: Hash) {
+        self.assert_tx_status(tx_hash, &json!({ "type": "success" }));
+    }
+
+    pub fn assert_txs_success(&self, tx_hashes: &[Hash]) {
+        for &tx_hash in tx_hashes {
+            self.assert_tx_success(tx_hash);
+        }
+    }
+
+    pub fn services(&self) -> DispatcherInfo {
+        self.inner
+            .public(ApiKind::System)
+            .get("v1/services")
+            .unwrap()
+    }
+
+    // TODO: add more endpoints
+    // v1/stats
+    // v1/healthcheck
+    // v1/user_agent
+    // v1/proto-sources
 }

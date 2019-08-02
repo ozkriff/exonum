@@ -89,21 +89,29 @@ impl ValidateInput for StartService {
 }
 
 impl Transactions for Supervisor {
+    // TODO (ozkriff): test
     fn request_artifact_deploy(
         &self,
         context: TransactionContext,
         deploy: DeployRequest,
     ) -> Result<(), ExecutionError> {
+        println!("Supervisor::request_artifact_deploy {:?}", deploy); // TODO: !!!
+        println!(
+            "Supervisor::request_artifact_deploy context.service_name()={:?}",
+            context.service_name()
+        ); // TODO: !!!
         deploy.validate()?;
         let blockchain_schema = blockchain::Schema::new(context.fork());
         // Verifies that we doesn't reach deadline height.
         if deploy.deadline_height < blockchain_schema.height() {
+            // TODO: check this
             return Err(Error::DeadlineExceeded)?;
         }
         let schema = Schema::new(context.service_name(), context.fork());
 
         // Verifies that the deployment request is not yet registered.
         if schema.pending_deployments().contains(&deploy.artifact) {
+            // TODO: check this
             return Err(Error::DeployRequestAlreadyRegistered)?;
         }
 
@@ -123,12 +131,17 @@ impl Transactions for Supervisor {
         }
 
         let confirmations = deploy_requests.confirm(&deploy, author);
+        dbg!(confirmations);
+        dbg!(deploy_requests.validators_len());
         if confirmations == deploy_requests.validators_len() {
+            println!("Supervisor::request_artifact_deploy: CONFIRMED!!!"); // TODO: !!!
+
             trace!("Deploy artifact request accepted {:?}", deploy.artifact);
 
             let artifact = deploy.artifact.clone();
             schema.pending_deployments().put(&artifact, deploy);
         }
+        println!("Supervisor::request_artifact_deploy: DONE"); // TODO: !!!
         Ok(())
     }
 
@@ -137,6 +150,7 @@ impl Transactions for Supervisor {
         mut context: TransactionContext,
         confirmation: DeployConfirmation,
     ) -> Result<(), ExecutionError> {
+        println!("Supervisor::confirm_artifact_deploy {:?}", confirmation); // TODO: !!!
         confirmation.validate()?;
         let blockchain_schema = blockchain::Schema::new(context.fork());
 
@@ -163,6 +177,10 @@ impl Transactions for Supervisor {
 
         let confirmations = deploy_confirmations.confirm(&confirmation, author);
         if confirmations == deploy_confirmations.validators_len() {
+            println!(
+                "(!!!) Registering deployed artifact in dispatcher {:?}",
+                confirmation.artifact
+            );
             trace!(
                 "Registering deployed artifact in dispatcher {:?}",
                 confirmation.artifact
@@ -177,6 +195,8 @@ impl Transactions for Supervisor {
                 spec: confirmation.spec,
             });
         }
+
+        println!("Supervisor::confirm_artifact_deploy: OK"); // TODO:
 
         Ok(())
     }

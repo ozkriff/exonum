@@ -363,6 +363,7 @@ impl Runtime for RustRuntime {
     }
 
     fn services_api(&self) -> Vec<(String, ServiceApiBuilder)> {
+        // println!("(!!!) RustRuntime::services_api");
         self.started_services
             .values()
             .map(|service_instance| {

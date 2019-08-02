@@ -24,6 +24,7 @@ use crate::{
     proto::{schema::runtime, ProtobufConvert},
 };
 
+// TODO: test these
 /// Kind of execution error, indicates in which module error occurred.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum ErrorKind {
@@ -46,7 +47,7 @@ pub enum ErrorKind {
     Service {
         /// User-defined error code.
         /// Error codes can have different meanings for the different transactions
-        /// and services.        
+        /// and services.
         code: u8,
     },
 }

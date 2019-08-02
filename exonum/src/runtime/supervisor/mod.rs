@@ -13,6 +13,7 @@
 // limitations under the License.
 
 pub use self::{
+    api::PrivateApi,
     errors::Error,
     proto::{DeployConfirmation, DeployRequest, StartService},
     schema::Schema,
@@ -72,6 +73,7 @@ impl Service for Supervisor {
         }
     }
 
+    // TODO (ozkriff): understand how it works
     fn after_commit(&self, context: AfterCommitContext) {
         if context.validator_id().is_none() {
             return;
