@@ -60,11 +60,22 @@ impl<T: IndexAccess> Schema<T> {
     pub(crate) fn add_artifact(&mut self, artifact: ArtifactId, spec: Any) -> Result<(), Error> {
         // Checks that we have not already deployed this artifact.
         if self.artifacts().contains(&artifact.name) {
+            println!("add_artifact: NOOO");
             return Err(Error::ArtifactAlreadyDeployed);
         }
 
         self.artifacts().put(&artifact.name, artifact.runtime_id);
         self.artifact_specs().put(&artifact, spec);
+
+        // TODO: print all artifacts here!
+        {
+            println!("add_artifact");
+            let artifacts: Vec<ArtifactId> = self.artifacts().into_iter().map(From::from).collect();
+            dbg!(artifacts);
+            let services: Vec<InstanceSpec> = self.service_instances().values().collect();
+            dbg!(services);
+        }
+
         Ok(())
     }
 
@@ -100,6 +111,14 @@ impl<T: IndexAccess> Schema<T> {
         let name = spec.name.clone();
         self.service_instance_ids().insert(spec.id);
         self.service_instances().put(&name, spec);
+
+        {
+            println!("add_service_instance");
+            let artifacts: Vec<ArtifactId> = self.artifacts().into_iter().map(From::from).collect();
+            dbg!(artifacts);
+            let services: Vec<InstanceSpec> = self.service_instances().values().collect();
+            dbg!(services);
+        }
         Ok(())
     }
 

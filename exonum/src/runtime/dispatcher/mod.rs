@@ -185,6 +185,7 @@ impl Dispatcher {
         artifact: ArtifactId,
         spec: impl Into<Any>,
     ) -> Result<(), ExecutionError> {
+        // TODO: ozkriff: !!!
         debug_assert!(artifact.validate().is_ok(), "{:?}", artifact.validate());
         debug_assert!(
             self.is_deployed(&artifact),
@@ -194,6 +195,10 @@ impl Dispatcher {
 
         Schema::new(fork).add_artifact(artifact.clone(), spec.into())?;
         info!(
+            "Registered artifact {} in runtime with id {}",
+            artifact.name, artifact.runtime_id
+        );
+        println!(
             "Registered artifact {} in runtime with id {}",
             artifact.name, artifact.runtime_id
         );
@@ -224,10 +229,13 @@ impl Dispatcher {
         spec: InstanceSpec,
         constructor: Any,
     ) -> Result<(), ExecutionError> {
+        println!("start_service: spec={:?}", spec);
+
         debug_assert!(spec.validate().is_ok(), "{:?}", spec.validate());
 
         // Check that service doesn't use existing identifiers.
         if self.runtime_lookup.contains_key(&spec.id) {
+            println!("start_service: NOOO");
             return Err(Error::ServiceIdExists.into());
         }
         // Tries to start and configure service instance.
@@ -236,6 +244,7 @@ impl Dispatcher {
             .ok_or(Error::IncorrectRuntime)
             .map_err(ExecutionError::from)
             .and_then(|runtime| {
+                println!("start_service: trying to start something..."); // TODO
                 runtime.start_service(&spec)?;
                 // Tries to configure a started instance of the service, otherwise it stops.
                 Self::configure_service(runtime.as_ref(), context, &spec, constructor).map_err(
@@ -245,6 +254,7 @@ impl Dispatcher {
                             spec.name, e
                         );
                         if let Err(e) = runtime.stop_service(&spec) {
+                            println!("start_service: NOOO (3)");
                             panic!(FatalError::new(e.to_string()))
                         }
                         e
@@ -254,6 +264,7 @@ impl Dispatcher {
         self.register_running_service(&spec);
         // Adds service instance to the dispatcher schema.
         Schema::new(context.fork).add_service_instance(spec)?;
+        println!("start_service: DONE");
         Ok(())
     }
 
@@ -383,6 +394,7 @@ impl Dispatcher {
 
     /// Registers service instance in the runtime lookup table.
     fn register_running_service(&mut self, instance: &InstanceSpec) {
+        // TODO: ozkriff
         info!("Running service instance {:?}", instance);
         self.runtime_lookup
             .insert(instance.id, instance.artifact.runtime_id);
@@ -420,6 +432,7 @@ impl Action {
         dispatcher: &mut Dispatcher,
         context: &ExecutionContext,
     ) -> Result<(), ExecutionError> {
+        println!("Action::execute: {:?}", self);
         match self {
             Action::RegisterArtifact { artifact, spec } => dispatcher
                 .register_artifact(context.fork, artifact, spec)

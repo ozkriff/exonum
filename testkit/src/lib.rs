@@ -178,6 +178,7 @@ use exonum::{
     node::{ApiSender, ExternalMessage, State as NodeState},
     proto::Any,
     runtime::{rust::ServiceFactory, ServiceInstanceId},
+    // events,
 };
 use exonum_merkledb::{Database, ObjectHash, Patch, Snapshot, TemporaryDB};
 use futures::{sync::mpsc, Future, Stream};
@@ -212,6 +213,7 @@ pub struct TestKit {
     network: TestNetwork,
     api_sender: ApiSender,
     cfg_proposal: Option<ConfigurationProposalState>,
+    // internal_stream: mpsc::Receiver<events::InternalRequest>,
 }
 
 impl fmt::Debug for TestKit {
@@ -253,14 +255,23 @@ impl TestKit {
         let db = CheckpointDb::new(database);
         let db_handler = db.handler();
 
+        let internal_api_channel = mpsc::channel(64); // TODO: why 64?
+
         let blockchain = Blockchain::new(
             db,
             service_factories,
             genesis,
             network.us().service_keypair(),
             api_sender.clone(),
-            mpsc::channel(0).0,
+            // TODO: создать нормально, rx отдать сюда, tx отдать в апи.
+            //
+            // в апи перд обработкой реквеста проверить,
+            // что нет в канале запроса на рестарт и, если есть, перезапуститься
+            // mpsc::channel(0).0,
+            internal_api_channel.0,
         );
+
+        // let x: mpsc::Receiver<events::InternalRequest> = internal_api_channel.1;
 
         let processing_lock = Arc::new(Mutex::new(()));
         let processing_lock_ = Arc::clone(&processing_lock);
@@ -297,11 +308,13 @@ impl TestKit {
             processing_lock,
             network,
             cfg_proposal: None,
+            // internal_stream: internal_api_channel.1,
         }
     }
 
     /// Creates an instance of `TestKitApi` to test the API provided by services.
     pub fn api(&self) -> TestKitApi {
+        // TODO: pass internal rx to TestKitApi
         TestKitApi::new(self)
     }
 

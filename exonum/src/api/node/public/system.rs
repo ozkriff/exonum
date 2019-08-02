@@ -67,6 +67,8 @@ pub struct DispatcherInfo {
 impl DispatcherInfo {
     /// Loads dispatcher information from database.
     pub fn load(access: impl IndexAccess) -> Self {
+        dbg!("DispatcherInfo::load");
+        println!("DispatcherInfo::load");
         let schema = dispatcher::Schema::new(access);
         Self {
             artifacts: schema.artifacts().into_iter().map(From::from).collect(),

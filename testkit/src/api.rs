@@ -20,10 +20,14 @@ use actix_web::{test::TestServer, App};
 use reqwest::{Client, RequestBuilder as ReqwestBuilder, Response, StatusCode};
 use serde::{de::DeserializeOwned, Serialize};
 
-use std::fmt::{self, Display};
+use std::{
+    cell::RefCell,
+    fmt::{self, Display},
+};
 
 use exonum::{
     api::{self, node::SharedNodeState, ApiAggregator, ServiceApiState},
+    // blockchain::Blockchain,
     messages::{AnyTx, Verified},
     node::ApiSender,
 };
@@ -58,9 +62,11 @@ impl fmt::Display for ApiKind {
 /// API encapsulation for the testkit. Allows to execute and synchronously retrieve results
 /// for REST-ful endpoints of services.
 pub struct TestKitApi {
-    test_server: TestServer,
+    test_server: RefCell<TestServer>, // <- RefCell this field!
     test_client: Client,
     api_sender: ApiSender,
+    // blockchain: Blockchain, // ???
+    aggregator: ApiAggregator,
 }
 
 impl fmt::Debug for TestKitApi {
@@ -68,6 +74,8 @@ impl fmt::Debug for TestKitApi {
         f.debug_struct("TestKitApi").finish()
     }
 }
+
+// fn
 
 impl TestKitApi {
     /// Creates a new instance of API.
@@ -84,10 +92,15 @@ impl TestKitApi {
     pub(crate) fn from_raw_parts(aggregator: ApiAggregator, api_sender: ApiSender) -> Self {
         trace!("Created testkit api: {:#?}", aggregator);
 
+        // TODO: ???
+
+        let test_server = create_test_server(aggregator.clone());
+        let test_server = RefCell::new(test_server);
         TestKitApi {
-            test_server: create_test_server(aggregator),
+            test_server,
             test_client: Client::new(),
             api_sender,
+            aggregator,
         }
     }
 
@@ -101,10 +114,23 @@ impl TestKitApi {
             .expect("Cannot broadcast transaction");
     }
 
+    fn update_api(&self) {
+        let _ /*new_test_server*/ = create_test_server(self.aggregator.clone());
+        // *self.test_server.borrow_mut() = new_test_server;
+    }
+
+    // TODO: Can I make this mutable?
     /// Creates a requests builder for the public API scope.
     pub fn public(&self, kind: impl Display) -> RequestBuilder {
+        // TODO: ???
+        // Но вообще мне кажется, что лучше просто в методах public, private
+        // перед отправкой запроса посмотреть, нет ли в канале RestartApi запроса,
+        // и если есть, то просто пересоздать поле TestServer.
+
+        self.update_api();
+
         RequestBuilder::new(
-            self.test_server.url(""),
+            self.test_server.borrow().url(""),
             &self.test_client,
             ApiAccess::Public,
             kind.to_string(),
@@ -113,8 +139,10 @@ impl TestKitApi {
 
     /// Creates a requests builder for the private API scope.
     pub fn private(&self, kind: impl Display) -> RequestBuilder {
+        self.update_api();
+
         RequestBuilder::new(
-            self.test_server.url(""),
+            self.test_server.borrow().url(""),
             &self.test_client,
             ApiAccess::Private,
             kind.to_string(),
