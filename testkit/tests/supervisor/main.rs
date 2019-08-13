@@ -229,9 +229,7 @@ fn testkit_with_inc_service_auditor_validator() -> TestKit {
 
 fn testkit_with_inc_service_and_static_instance() -> TestKit {
     let service = IncService::new();
-    let params = ();
-    let collection =
-        InstanceCollection::new(service).with_instance(SERVICE_ID, SERVICE_NAME, params);
+    let collection = InstanceCollection::new(service).with_instance(SERVICE_ID, SERVICE_NAME, ());
     TestKitBuilder::validator()
         .with_logger()
         .with_service(collection)

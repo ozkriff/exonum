@@ -67,7 +67,7 @@ impl fmt::Display for ApiKind {
 /// API encapsulation for the testkit. Allows to execute and synchronously retrieve results
 /// for REST-ful endpoints of services.
 pub struct TestKitApi {
-    test_server: TestServer, // TODO: un-RefCell this field
+    test_server: TestServer,
     test_client: Client,
     api_sender: ApiSender,
 }
@@ -93,12 +93,10 @@ impl TestKitApi {
     pub(crate) fn from_raw_parts(aggregator: ApiAggregator, api_sender: ApiSender) -> Self {
         trace!("Created testkit api: {:#?}", aggregator);
 
-        let test_server = create_test_server(aggregator.clone());
         TestKitApi {
-            test_server,
+            test_server: create_test_server(aggregator.clone()),
             test_client: Client::new(),
             api_sender,
-            // aggregator,
         }
     }
 
@@ -112,16 +110,8 @@ impl TestKitApi {
             .expect("Cannot broadcast transaction");
     }
 
-    // TODO: Can I make this mutable?
     /// Creates a requests builder for the public API scope.
     pub fn public(&self, kind: impl Display) -> RequestBuilder {
-        // TODO: ???
-        // Но вообще мне кажется, что лучше просто в методах public, private
-        // перед отправкой запроса посмотреть, нет ли в канале RestartApi запроса,
-        // и если есть, то просто пересоздать поле TestServer.
-
-        // self.update_api();
-
         RequestBuilder::new(
             self.test_server.url(""),
             &self.test_client,

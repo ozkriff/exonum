@@ -24,7 +24,6 @@ use crate::{
     proto::{schema::runtime, ProtobufConvert},
 };
 
-// TODO: test these
 /// Kind of execution error, indicates in which module error occurred.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum ErrorKind {

@@ -37,7 +37,6 @@ pub trait PrivateApi {
     fn start_service(&self, service: StartService) -> Result<Hash, Self::Error>;
 }
 
-#[derive(Debug)] // TODO: remove after debugging is done
 struct ApiImpl<'a> {
     state: &'a ServiceApiState,
     instance_id: ServiceInstanceId,

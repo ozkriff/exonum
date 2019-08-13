@@ -12,11 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO (ozkriff): add a test for each of these errors
-//   - UnknownAuthor
-//   - AlreadyDeployed (?)
-//   - DeployRequestAlreadyRegistered (?)
-
 /// Common errors emitted by transactions during execution.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, IntoExecutionError)]
 #[exonum(crate = "crate")]
