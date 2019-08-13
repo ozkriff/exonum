@@ -94,7 +94,7 @@ impl TestKitApi {
         trace!("Created testkit api: {:#?}", aggregator);
 
         TestKitApi {
-            test_server: create_test_server(aggregator.clone()),
+            test_server: create_test_server(aggregator),
             test_client: Client::new(),
             api_sender,
         }
@@ -134,14 +134,14 @@ impl TestKitApi {
         SystemPublicApi::new(self)
     }
 
-    // TODO: (ozkriff) implement
+    // TODO: implement
     pub fn system_private_api(self) {
         // SystemPrivateApi::new(self) // TODO
         unimplemented!("TODO")
     }
 }
 
-// TODO (ozkriff): Is it really a good idea? Just using supervisor's endpoints looks easier.
+// TODO: Is it really a good idea? Just using supervisor's endpoints looks easier.
 // impl supervisor::PrivateApi for TestKitApi {
 //     // type Error = (); // TODO: What error type should I use here?
 //
@@ -366,16 +366,8 @@ fn create_test_server(aggregator: ApiAggregator) -> TestServer {
 }
 
 // TODO: SystemPublicApi & SystemPrivateApi
-//
-// идея делать отдельные структуры для клиентов апи она хороша тем,
-// что соотносится с тем, как реальные клиенты работают с нашим апи.
-//
-// в этом ПРе стоит сделать?
-//
-// why not, там немного ведь допилить надо для SystemPublicApi и SystemPrivateApi,
-// они там в паре тестов юзаются
 
-// TODO (@ozkriff): Add `SystemPrivateApi`
+// TODO: Add `SystemPrivateApi` with methods for endpoints:
 // "v1/peers"
 // "v1/network"
 // "v1/consensus_enabled"
@@ -430,8 +422,8 @@ impl<'a> SystemPublicApi<'a> {
     }
 
     // TODO: add more endpoints
-    // v1/stats
-    // v1/healthcheck
-    // v1/user_agent
-    // v1/proto-sources
+    // "v1/stats"
+    // "v1/healthcheck"
+    // "v1/user_agent"
+    // "v1/proto-sources"
 }
